@@ -30,6 +30,9 @@ uv run pytest -q
 uv run python -m app.ask "LoRAとは何ですか？"
 ```
 
+回答後は質問を続けて入力できます。終了するには `exit` と入力してください。
+入力が8,000トークン以上になると古い会話を要約し、直近2往復を残して続けます。
+
 詳しい手順は [lectures/01/problem.md](lectures/01/problem.md) を見てください。
 
 ## 構成
