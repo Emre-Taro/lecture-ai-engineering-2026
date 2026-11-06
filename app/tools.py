@@ -6,9 +6,12 @@
 
 import json
 from functools import cache
+from datetime import datetime
 from pathlib import Path
+from random import choice
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+LOG_DIR = Path(__file__).resolve().parent.parent / "learning_log"
 MAX_RESULTS = 3
 
 
@@ -29,7 +32,7 @@ def _names(entry: dict) -> list[str]:
 
 
 def search_glossary(query: str) -> str:
-    """講座の用語集から用語を検索し、定義と、どの回で扱うかを返す。
+    """講座の用語集から用語を検索し、定義と、どの回で扱うかを返す。そして、アプリケーション開発における具体例も返す。
 
     AIエンジニアリングの用語や、この講座（AIE2026）に固有の言葉について
     答える前に使うこと。query には調べたい用語を1つだけ入れる（例: "LoRA"）。
@@ -77,3 +80,41 @@ def get_lecture_summary(lecture: int) -> str:
         available = sorted(p.stem for p in (DATA_DIR / "lectures").glob("*.md"))
         return f"第{lecture}回の要点はまだありません。用意されている回: {', '.join(available)}"
     return path.read_text(encoding="utf-8")
+
+def make_quiz(lecture: int) -> str:
+    """指定した回の用語から1つを選び、確認問題と答えを返す。
+
+    「第2回の内容から確認問題を出して」のように、講義内容の復習問題を
+    求められたときに使う。
+    """
+    terms = [term for term in load_glossary() if term["lecture"] == lecture]
+    if not terms:
+        return f"第{lecture}回の用語が用語集にありません。"
+
+    term = choice(terms)
+    return json.dumps(
+        {
+            "question": f"「{term['term']}」とは何ですか？",
+            "answer": term["definition"],
+            "lecture": lecture,
+        },
+        ensure_ascii=False,
+    )
+
+
+def save_learning_log(content: str) -> str:
+    """利用者が学習記録の保存を明示的に依頼したとき、要点を追記する。
+
+    用語集に未登録の用語があっても、その旨を含めて記録する。未登録語の
+    定義は推測しない。このツールの呼び出し時にアプリが保存確認を行う。
+    """
+    entry = content.strip()
+    if not entry:
+        return "保存する内容が空です。学習記録を指定してください。"
+
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    path = LOG_DIR / "learning_log.md"
+    timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    with path.open("a", encoding="utf-8") as f:
+        f.write(f"\n## {timestamp}\n\n{entry}\n")
+    return "学習記録を learning_log/learning_log.md に追記しました。"

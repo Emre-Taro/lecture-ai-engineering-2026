@@ -39,6 +39,39 @@ def test_lecture_summary():
     assert "まだありません" in tools.get_lecture_summary(99)
 
 
+def test_make_quiz_uses_a_term_from_the_requested_lecture():
+    quiz = json.loads(tools.make_quiz(2))
+    lecture_terms = [term for term in tools.load_glossary() if term["lecture"] == 2]
+
+    assert quiz["lecture"] == 2
+    assert quiz["question"].startswith("「")
+    assert quiz["question"].endswith("」とは何ですか？")
+    assert any(term["term"] in quiz["question"] for term in lecture_terms)
+    assert any(term["definition"] == quiz["answer"] for term in lecture_terms)
+
+
+def test_make_quiz_reports_when_lecture_has_no_terms():
+    assert "用語が用語集にありません" in tools.make_quiz(99)
+
+
+def test_save_learning_log_appends_content(tmp_path, monkeypatch):
+    monkeypatch.setattr(tools, "LOG_DIR", tmp_path / "learning_log")
+
+    result = tools.save_learning_log("  LoRAの仕組みを学んだ。  ")
+
+    saved = (tmp_path / "learning_log" / "learning_log.md").read_text(encoding="utf-8")
+    assert "LoRAの仕組みを学んだ。" in saved
+    assert result == "学習記録を learning_log/learning_log.md に追記しました。"
+
+
+def test_save_learning_log_rejects_empty_content(tmp_path, monkeypatch):
+    log_dir = tmp_path / "learning_log"
+    monkeypatch.setattr(tools, "LOG_DIR", log_dir)
+
+    assert "内容が空" in tools.save_learning_log("  \n")
+    assert not log_dir.exists()
+
+
 def test_default_question_of_lecture1_is_answerable_from_glossary():
     """第1回の既定の質問（app.ask）は、第3回のエージェントが用語集で正しく答えられること。"""
     from app.ask import DEFAULT_QUESTION

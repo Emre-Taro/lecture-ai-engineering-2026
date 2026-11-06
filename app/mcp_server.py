@@ -28,6 +28,15 @@ server.tool()(tools.search_glossary)
 
 # TODO(第5回 演習): tools.get_lecture_summary も公開しよう（上の1行と同じ書き方）
 # 第3回で make_quiz を作った人は、それも公開できる
+def make_quiz(lecture: int) -> str:
+    """指定した回の用語から 1つを選び、
+    確認問題と答えを返す。
+    「第2回の確認問題を出して」のように、
+    復習用の問題を求められたときに使う。
+    """
+    # 1. load_glossary() から lecture が一致する用語を集める
+    # 2. 1 つ選ぶ（random.choice ）
+    # 3. 問題と答えを文字列で返す（ json.dumps など）
 
 
 def main() -> None:
